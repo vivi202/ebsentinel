@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "autoencoder","ebsentinel", "ebsentinel-common", "ebsentinel-ebpf"]
+members = [ "autoencoder","ebsentinel", "ebsentinel-common", "ebsentinel-core", "ebsentinel-ebpf", "ebsentinel-rec", "ebsentinel-train"]
 default-members = ["ebsentinel", "ebsentinel-common"]
 
 [workspace.dependencies]

@@ -1498,6 +1498,7 @@ dependencies = [
  "aya-log",
  "burn",
  "ebsentinel-common",
+ "ebsentinel-core",
  "ebsentinel-ebpf",
  "env_logger",
  "libc",
@@ -1513,6 +1514,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ebsentinel-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aya",
+ "aya-build",
+ "aya-log",
+ "ebsentinel-common",
+ "env_logger",
+ "libc",
+ "log",
+ "tokio",
+]
+
+[[package]]
 name = "ebsentinel-ebpf"
 version = "0.1.0"
 dependencies = [
@@ -1521,6 +1537,14 @@ dependencies = [
  "ebsentinel-common",
  "which",
 ]
+
+[[package]]
+name = "ebsentinel-rec"
+version = "0.1.0"
+
+[[package]]
+name = "ebsentinel-train"
+version = "0.1.0"
 
 [[package]]
 name = "either"
