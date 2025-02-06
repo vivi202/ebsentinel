@@ -1,0 +1,17 @@
+[package]
+name = "ebsentinel-ebpf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ebsentinel-common = { path = "../ebsentinel-common" }
+
+aya-ebpf = { workspace = true }
+aya-log-ebpf = { workspace = true }
+
+[build-dependencies]
+which = { workspace = true }
+
+[[bin]]
+name = "ebsentinel"
+path = "src/main.rs"
