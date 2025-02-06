@@ -1,6 +1,4 @@
-
 use ebsentinel_core::{self, run};
-#[rustfmt::skip]
 use tokio::signal;
 //Main program uses the previusly trained model to detect anomalies
 #[tokio::main]
