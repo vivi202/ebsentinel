@@ -1,0 +1,7 @@
+[package]
+name = "autoencoder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+burn = "0.16.0"
