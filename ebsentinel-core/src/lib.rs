@@ -4,7 +4,7 @@ use aya::{maps::{PerCpuArray, PerCpuValues}, programs::BtfTracePoint, util::nr_c
 use ebsentinel_common::MAX_SYSCALLS;
 #[rustfmt::skip]
 use log::{debug, warn};
-use tokio::{signal, time::sleep};
+use tokio::{time::sleep};
 pub fn run()-> anyhow::Result<()>{
     env_logger::init();
 

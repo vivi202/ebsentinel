@@ -4,15 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ebsentinel-common = { path = "../ebsentinel-common", features = ["user"] }
 ebsentinel-core = { path = "../ebsentinel-core" }
 
 anyhow = { workspace = true, default-features = true }
-aya = { workspace = true }
-aya-log = { workspace = true }
-env_logger = { workspace = true }
-libc = { workspace = true }
-log = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "net", "signal","time"] }
 burn = { version = "0.16.0", features = ["wgpu"] }
 

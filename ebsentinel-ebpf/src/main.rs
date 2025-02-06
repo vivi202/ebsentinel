@@ -20,20 +20,19 @@ pub fn ebsentinel(ctx: BtfTracePointContext) -> i32 {
     }
 }
 
-fn try_sys_enter(ctx: BtfTracePointContext) -> Result<i32, i32> {
-        
+fn try_sys_enter(ctx: BtfTracePointContext) -> Result<i32, i32> {    
         let pid= ctx.pid();
         let syscall_id: c_long = unsafe { ctx.arg(1) }; 
         if let Some(monitored_pid) = unsafe { MONITORED_PID.get(0) }{
-            if pid != *monitored_pid {
-                return Ok(0);
+            if pid == *monitored_pid {
+                if let Some(syscall_count) = unsafe {SYSCALLS_COUNTER.get_ptr_mut(syscall_id as u32)}{
+                    unsafe {
+                        *syscall_count+=1; 
+                    }
+    
+                };
             }
-            if let Some(syscall_count) = unsafe {SYSCALLS_COUNTER.get_ptr_mut(syscall_id as u32)}{
-                unsafe {
-                    *syscall_count+=1; 
-                }
-
-            };
+            return Ok(0);
         }
     Ok(0)
 }
