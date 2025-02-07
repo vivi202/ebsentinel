@@ -26,9 +26,16 @@ pub struct Model<B: Backend>{
 impl<B: Backend> Model<B> {
     pub fn forward_reconstruction(&self, vecs: Tensor<B, 2>) -> RegressionOutput<B> {
         let output = self.inner.forward(vecs.clone());
+        
         let loss: Tensor<B, 1> =
             MseLoss::new().forward(output.clone(), vecs.clone(), nn::loss::Reduction::Mean);
         RegressionOutput::new(loss, output, vecs)
+    }
+}
+
+impl<B: Backend> Model<B> {
+    pub fn forward(&self, vecs: Tensor<B, 2>) -> Tensor<B,2> {
+       self.inner.forward(vecs)
     }
 }
 
@@ -62,11 +69,11 @@ impl ModelConfig {
 pub struct TrainingConfig {
     pub model: ModelConfig,
     pub optimizer: AdamConfig,
-    #[config(default = 200)]
+    #[config(default = 500)]
     pub num_epochs: usize,
-    #[config(default = 48)]
+    #[config(default = 8)]
     pub batch_size: usize,
-    #[config(default = 4)]
+    #[config(default = 2)]
     pub num_workers: usize,
     #[config(default = 42)]
     pub seed: u64,

@@ -44,18 +44,33 @@ async fn main() -> anyhow::Result<()> {
          )",
         [],
     )?;
-    for i in 0..10000 {
-        let data = Syscalls{syscalls:vec![i as f32 + 1.0;512]};
-        // Insert serialized data
-        conn.execute("INSERT INTO train (syscalls) VALUES (?)", [&data])?;
-    }
 
-
-    // Retrieve and deserialize
-    let retrieved_vec: Syscalls = conn.query_row("SELECT syscalls FROM train", [], |row| row.get(0))?;
     
-    println!("Retrieved Vec<f32>: {:?}", retrieved_vec.syscalls);
-    let _=run_ebsentinel_ebpf(5222);
+    let mut rx =run_ebsentinel_ebpf(57073)?;
+
+    tokio::spawn(async move {
+        let conn = Connection::open("ebsentinel.db").unwrap();
+        conn.execute(
+            "create table if not exists train (
+                 row_id integer primary key,
+                 syscalls blob not null 
+             )",
+            [],
+        ).unwrap();
+        conn.execute(
+            "create table if not exists test (
+                 row_id integer primary key,
+                 syscalls blob not null 
+             )",
+            [],
+        ).unwrap();
+        
+        loop {
+            let rates=rx.recv().await;
+            let data= Syscalls{syscalls: rates.unwrap()};
+            conn.execute("INSERT INTO test (syscalls) VALUES (?)", [&data]).unwrap();
+        }
+    });
     
     println!("Hello, world!");
     let ctrl_c = signal::ctrl_c();

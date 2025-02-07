@@ -7,12 +7,14 @@ use burn::prelude::*;
 pub struct Encoder<B: Backend> {
     linear: Linear<B>,
     activation: Relu,
+    linear2: Linear<B>
 }
 
 impl<B: Backend> Encoder<B> {
     pub fn forward(&self, input: Tensor<B, 2>) -> Tensor<B, 2> {
-        let x = self.linear.forward(input);
-        self.activation.forward(x)
+        let x=self.linear.forward(input);
+        let x=self.activation.forward(x);
+        self.linear2.forward(x)
     }
 }
 
@@ -30,17 +32,20 @@ impl<B: Backend> Middle<B> {
 
 /// Decoder module
 #[derive(Module, Debug)]
+
 pub struct Decoder<B: Backend> {
-    linear1: Linear<B>,
+    linear: Linear<B>,
     activation: Relu,
     linear2: Linear<B>,
+    activation2: Relu,
 }
 
 impl<B: Backend> Decoder<B> {
     pub fn forward(&self, input: Tensor<B, 2>) -> Tensor<B, 2> {
-        let x = self.linear1.forward(input);
-        let x = self.activation.forward(x);
-        self.linear2.forward(x) // Linear output layer
+        let x= self.linear.forward(input);
+        let x= self.activation.forward(x);
+        let x=self.linear2.forward(x);
+        self.activation2.forward(x)
     }
 }
 
@@ -71,18 +76,19 @@ impl AutoencoderConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Autoencoder<B> {
         Autoencoder {
             encoder: Encoder {
-                linear: LinearConfig::new(self.input_size, self.input_size).init(device),
+                linear: LinearConfig::new(self.input_size, self.input_size/2).init(device),
                 activation: Relu::new(),
+                linear2:LinearConfig::new(self.input_size/2, self.latent_size).init(device)
             },
             middle: Middle {
-                linear: LinearConfig::new(self.input_size, self.latent_size).init(device),
+                linear: LinearConfig::new(self.latent_size, self.latent_size).init(device),
             },
             decoder: Decoder {
-                linear1: LinearConfig::new(self.latent_size, self.input_size).init(device),
+                linear: LinearConfig::new(self.latent_size, self.input_size/2).init(device),
                 activation: Relu::new(),
-                linear2: LinearConfig::new(self.input_size, self.input_size).init(device),
+                linear2: LinearConfig::new(self.input_size/2, self.input_size).init(device),
+                activation2: Relu::new(),
             },
         }
     }
 }
-

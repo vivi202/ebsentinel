@@ -4,8 +4,9 @@ use aya::{maps::{PerCpuArray, PerCpuValues}, programs::BtfTracePoint, util::nr_c
 use ebsentinel_common::MAX_SYSCALLS;
 #[rustfmt::skip]
 use log::{debug, warn};
-use tokio::time::sleep;
-pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<()>{
+use tokio::{sync::mpsc::UnboundedReceiver, time::sleep};
+use tokio::sync::mpsc::unbounded_channel;
+pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<UnboundedReceiver<Vec<f32>>>{
     env_logger::init();
 
     // Bump the memlock rlimit. This is needed for older kernels that don't use the
@@ -40,12 +41,14 @@ pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<()>{
     
     let nr_cpus = nr_cpus().map_err(|(_, error)| error)?;
     monitored_pid.set(0, PerCpuValues::try_from(vec![pid; nr_cpus])?, 0)?;
-
+    let (tx,rx) = unbounded_channel();
     tokio::spawn(async move {
         let syscall_counts: PerCpuArray<&mut aya::maps::MapData, u64> = PerCpuArray::try_from(ebpf.map_mut("SYSCALLS_COUNTERS").unwrap()).unwrap();
-        
+        let mut prev = vec![0.0;MAX_SYSCALLS as usize];
+        let interval_ms: u64= 100;
+        let mut last_rates=Vec::new();
         loop {
-            let mut values =[0;MAX_SYSCALLS as usize];
+            let mut values =vec![0;MAX_SYSCALLS as usize];
             for i in 0..MAX_SYSCALLS {
                 //Get count from all cpus
                 if let Ok(counts)= syscall_counts.get(&(i as u32), 0){
@@ -54,12 +57,30 @@ pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<()>{
                     }
                 }
             }
+            
             //Compute derivative
+            let mut rates = vec![0.0; MAX_SYSCALLS as usize];
+            let mut max= rates[0];
+            for i in 0..MAX_SYSCALLS as usize {
+                rates[i] = (values[i] as f32 - prev[i]) / (interval_ms as f32 / 1000.0);
+                prev[i] = values[i] as f32;
+                max=max.max(rates[i])
+            }
 
-            //Do inference
-            println!("values: {:?}",values);
-            sleep(Duration::from_millis(50)).await
+            if last_rates != rates{
+                let normalized=rates.iter().map(|r| match max {
+                    0.0 => 0.0,
+                    max => r/max
+                }).collect();
+                println!("values {:?}",&normalized);
+
+                tx.send(normalized).unwrap();
+            }
+
+            last_rates=rates.clone();
+
+            sleep(Duration::from_millis(interval_ms)).await
         }
     });
-    Ok(())
+    Ok(rx)
 }
