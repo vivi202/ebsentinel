@@ -4,8 +4,8 @@ use aya::{maps::{PerCpuArray, PerCpuValues}, programs::BtfTracePoint, util::nr_c
 use ebsentinel_common::MAX_SYSCALLS;
 #[rustfmt::skip]
 use log::{debug, warn};
-use tokio::{time::sleep};
-pub fn run()-> anyhow::Result<()>{
+use tokio::time::sleep;
+pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<()>{
     env_logger::init();
 
     // Bump the memlock rlimit. This is needed for older kernels that don't use the
@@ -39,7 +39,7 @@ pub fn run()-> anyhow::Result<()>{
     let mut monitored_pid: PerCpuArray<&mut aya::maps::MapData, u32> = PerCpuArray::try_from(ebpf.map_mut("MONITORED_PID").unwrap())?;
     
     let nr_cpus = nr_cpus().map_err(|(_, error)| error)?;
-    monitored_pid.set(0, PerCpuValues::try_from(vec![91996u32; nr_cpus])?, 0)?;
+    monitored_pid.set(0, PerCpuValues::try_from(vec![pid; nr_cpus])?, 0)?;
 
     tokio::spawn(async move {
         let syscall_counts: PerCpuArray<&mut aya::maps::MapData, u64> = PerCpuArray::try_from(ebpf.map_mut("SYSCALLS_COUNTERS").unwrap()).unwrap();
