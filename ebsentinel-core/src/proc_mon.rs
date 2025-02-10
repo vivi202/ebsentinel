@@ -31,6 +31,7 @@ impl ProcMon {
         };
         proc_mon
     }
+
     pub fn run(&mut self) -> anyhow::Result<UnboundedReceiver<Vec<f32>>> {
         let (tx, rx) = unbounded_channel();
         let mut monitored_pid: PerCpuArray<&mut aya::maps::MapData, u32> =
@@ -47,7 +48,7 @@ impl ProcMon {
             .unwrap();
 
         let map = self.ebpf.take_map("SYSCALLS_COUNTERS").unwrap();
-        let syscall_counts: PerCpuArray<aya::maps::MapData, u64> =
+        let syscall_map: PerCpuArray<aya::maps::MapData, u64> =
             PerCpuArray::try_from(map)?;
 
         let polling_rate=self.polling_rate.clone();
@@ -56,31 +57,33 @@ impl ProcMon {
 
         tokio::spawn(async move {
             let mut prev = Vec::new();
+            let mut syscall_counts = vec![0; MAX_SYSCALLS as usize];
             loop {
-                let mut values = vec![0; MAX_SYSCALLS as usize];
 
-                for i in 0..MAX_SYSCALLS {
+                for i in 0..MAX_SYSCALLS as usize{
                     //Aggregate Syscalls counts from all cpus
-                    if let Ok(counts) = syscall_counts.get(&(i as u32), 0) {
+                    syscall_counts[i]=0;
+                    if let Ok(counts) = syscall_map.get(&(i as u32), 0) {
                         for cpu_val in counts.iter() {
-                            values[i as usize] += cpu_val;
+                            syscall_counts[i] += cpu_val;
                         }
                     }
                 }
                 
-                if values != prev{
+                if syscall_counts != prev{
                                   //Compute derivative
-                let rates=differentiator.process(&values);
+                let rates=differentiator.process(&syscall_counts);
                 if let Ok(rates) = rates {
                     let norm=Normalizer.process(&rates).unwrap();
                     tx.send(norm).unwrap();
                 }
-                prev= values.clone();  
+                prev= syscall_counts.clone();  
                 }
 
                 sleep(polling_rate).await
             }
         });
+        
         Ok(rx)
     }
 

@@ -2,7 +2,6 @@ use ebsentinel_core::run_ebsentinel_ebpf;
 use rusqlite::{types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef}, Connection, ToSql};
 use tokio::signal;
 use serde::{Deserialize, Serialize};
-use serde_rusqlite::*;
 #[derive(Debug, Clone,Serialize,Deserialize)]
 struct Syscalls{
     syscalls: Vec<f32>
@@ -29,7 +28,7 @@ impl FromSql for Syscalls {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let conn = Connection::open("ebsentinel.db")?;
-    //TODO save also meta 
+
     conn.execute(
         "create table if not exists train (
              row_id integer primary key,
@@ -73,7 +72,6 @@ async fn main() -> anyhow::Result<()> {
         }
     });
     
-    println!("Hello, world!");
     let ctrl_c = signal::ctrl_c();
     println!("Waiting for Ctrl-C...");
     ctrl_c.await?;
