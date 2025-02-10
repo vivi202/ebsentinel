@@ -1,7 +1,6 @@
 use burn::data::dataloader::batcher::Batcher;
-use burn::module::{Module, ModuleDisplay};
 use burn::nn::loss::{self, MseLoss};
-use burn::nn::{BatchNorm, BatchNormConfig, LayerNorm, LayerNormConfig, Linear, LinearConfig, Relu, Sigmoid, Tanh};
+use burn::nn::{LayerNorm, LayerNormConfig, Linear, LinearConfig, Relu};
 use burn::prelude::*;
 use burn::tensor::cast::ToElement;
 use data::{SyscallBatcher, Syscalls};
@@ -91,6 +90,7 @@ impl AutoencoderConfig {
             },
             middle: Middle {
                 linear: LinearConfig::new(self.latent_size, self.latent_size).init(device),
+                //This help to stabilize training.
                 norm: LayerNormConfig::new(self.latent_size).init(device),
                 activation: Relu::new(),
             },
@@ -128,7 +128,7 @@ pub fn infer<B: Backend>(device: B::Device, model: &Model<B>, item: Syscalls) ->
     let output = model.inner.forward(batch.syscalls.clone());
     let loss = MseLoss::new()
         .forward(batch.syscalls, output.clone(), loss::Reduction::Mean)
-        .detach()  // Prevents unnecessary gradient tracking
+        .detach()  
         .into_scalar();
 
     (output.into_data().to_vec().unwrap(), loss.to_f32())

@@ -26,7 +26,6 @@ impl FromSql for Syscalls {
     }
 }
 
-//TODO add also metadata to db like mean / data usefull to normalization
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let conn = Connection::open("ebsentinel.db")?;
@@ -47,8 +46,8 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     
-    let mut rx =run_ebsentinel_ebpf(46694)?;
-
+    let mut proc_mon =run_ebsentinel_ebpf(162959)?;
+    let mut rx=proc_mon.run()?;
     tokio::spawn(async move {
         let conn = Connection::open("ebsentinel.db").unwrap();
         conn.execute(

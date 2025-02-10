@@ -16,7 +16,7 @@ fn main() {
     train::<MyAutodiffBackend>(
         "ebsentinel.db",
         &artifact_dir,
-        TrainingConfig::new(ModelConfig::new(512, 256), AdamConfig::new()),
+        TrainingConfig::new(ModelConfig::new(512, 64), AdamConfig::new()),
         device.clone(),
     );
     
@@ -41,6 +41,7 @@ fn main() {
         println!("");
         thres= thres.max(loss);
     }
+    
     let test_item=Syscalls { counts: vec![1.0;512] };
     let (out,loss) =infer(device.clone(), &model, test_item.clone());
     println!("threshold: {}",thres);

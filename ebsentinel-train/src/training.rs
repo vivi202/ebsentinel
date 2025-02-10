@@ -70,13 +70,13 @@ pub struct TrainingConfig {
     pub optimizer: AdamConfig,
     #[config(default = 200)]
     pub num_epochs: usize,
-    #[config(default = 8)]
+    #[config(default = 16)]
     pub batch_size: usize,
     #[config(default = 2)]
     pub num_workers: usize,
     #[config(default = 42)]
     pub seed: u64,
-    #[config(default = 1.0e-4)]
+    #[config(default = 0.0001414213562373095)]
     pub learning_rate: f64,
 }
 

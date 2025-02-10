@@ -1,4 +1,4 @@
-use autoencoder::{data::Syscalls, infer, Autoencoder, AutoencoderConfig, Model};
+use autoencoder::{data::Syscalls, infer, AutoencoderConfig, Model};
 use burn::{backend::Wgpu, config::Config, module::Module, optim::AdamConfig, prelude::Backend, record::{CompactRecorder, Recorder}};
 use ebsentinel_core::{self, run_ebsentinel_ebpf};
 use tokio::signal;
@@ -37,10 +37,11 @@ pub struct TrainingConfig {
 async fn main() -> anyhow::Result<()> {
     type MyBackend = Wgpu<f32, i32>;
     let device = burn::backend::wgpu::WgpuDevice::default();
-    let mut rx =run_ebsentinel_ebpf(68227).unwrap();
+    let mut proc_mon=run_ebsentinel_ebpf(163389).unwrap();
+    let mut rx =proc_mon.run().unwrap();
     
     let artifact_dir = "experiment";
-
+    //TODO Load only model since TrainingConfig is useless
     let config = TrainingConfig::load(format!("{artifact_dir}/config.json"))
     .expect("Config should exist for the model");
 
@@ -50,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
 
 
     let model = config.model.init::<MyBackend>(&device).load_record(record);
-
+    
     tokio::spawn(async move {
         
         loop {
@@ -60,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
             let (out, loss) = infer(device.clone(), &model, item);
             println!("{}",loss);
             
-            if loss > 0.022097578 {
+            if loss > 0.000015 {
                 println!("anomaly detected")
             }
         }
