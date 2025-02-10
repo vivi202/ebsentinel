@@ -157,6 +157,8 @@ name = "autoencoder"
 version = "0.1.0"
 dependencies = [
  "burn",
+ "serde",
+ "serde_bytes",
 ]
 
 [[package]]
@@ -1502,6 +1504,7 @@ name = "ebsentinel"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "autoencoder",
  "aya-build",
  "burn",
  "ebsentinel-core",

@@ -12,14 +12,15 @@ fn main() {
     let device = burn::backend::wgpu::WgpuDevice::default();
 
     let artifact_dir = "experiment";
-    
+
     train::<MyAutodiffBackend>(
         "ebsentinel.db",
         &artifact_dir,
-        TrainingConfig::new(ModelConfig::new(512, 128), AdamConfig::new()),
+        TrainingConfig::new(ModelConfig::new(512, 256), AdamConfig::new()),
         device.clone(),
     );
-  
+    
+
   
     let config = TrainingConfig::load(format!("{artifact_dir}/config.json"))
         .expect("Config should exist for the model");
@@ -29,7 +30,7 @@ fn main() {
 
     let model = config.model.init::<MyBackend>(&device).load_record(record);
 
-    let dataset=SyscallsDataset::test("ebsentinel.db");
+    let dataset=SyscallsDataset::train("ebsentinel.db");
     let mut thres: f32=0.0;
     for i in 0..dataset.len(){
         let item=dataset.get(i).unwrap();
@@ -55,11 +56,9 @@ pub fn infer<B: Backend>(device: B::Device, model: &Model<B>, item: Syscalls) ->
     let batcher = SyscallBatcher::new(device);
     let batch = batcher.batch(vec![item]);
     let output = model.forward(batch.syscalls.clone());
-    let mask= batch.syscalls.clone().not_equal_elem(0.0).float();
-    let masked_output=output.clone().mul(mask);
     let loss =
-        MseLoss::new().forward(output, batch.syscalls, loss::Reduction::Mean).into_scalar();
+        MseLoss::new().forward( output.clone(),batch.syscalls, loss::Reduction::Mean).into_scalar();
 
         
-    (masked_output.into_data().to_vec().unwrap(),loss.to_f32())
+    (output.into_data().to_vec().unwrap(),loss.to_f32())
 }

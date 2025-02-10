@@ -6,6 +6,7 @@ use ebsentinel_common::MAX_SYSCALLS;
 use log::{debug, warn};
 use tokio::{sync::mpsc::UnboundedReceiver, time::sleep};
 use tokio::sync::mpsc::unbounded_channel;
+
 pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<UnboundedReceiver<Vec<f32>>>{
     env_logger::init();
 
@@ -41,7 +42,9 @@ pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<UnboundedReceiver<Vec<f32>
     
     let nr_cpus = nr_cpus().map_err(|(_, error)| error)?;
     monitored_pid.set(0, PerCpuValues::try_from(vec![pid; nr_cpus])?, 0)?;
+    
     let (tx,rx) = unbounded_channel();
+    
     tokio::spawn(async move {
         let syscall_counts: PerCpuArray<&mut aya::maps::MapData, u64> = PerCpuArray::try_from(ebpf.map_mut("SYSCALLS_COUNTERS").unwrap()).unwrap();
         let mut prev = vec![0.0;MAX_SYSCALLS as usize];
@@ -60,19 +63,23 @@ pub fn run_ebsentinel_ebpf(pid: u32)-> anyhow::Result<UnboundedReceiver<Vec<f32>
             
             //Compute derivative
             let mut rates = vec![0.0; MAX_SYSCALLS as usize];
-            let mut max= rates[0];
+            let mut max: f32= 0.0;
             for i in 0..MAX_SYSCALLS as usize {
                 rates[i] = (values[i] as f32 - prev[i]) / (interval_ms as f32 / 1000.0);
                 prev[i] = values[i] as f32;
-                max=max.max(rates[i])
+                max = max.max(rates[i]);
             }
 
             if last_rates != rates{
-                let normalized=rates.iter().map(|r| match max {
-                    0.0 => 0.0,
-                    max => r/max
-                }).collect();
-                println!("values {:?}",&normalized);
+                //println!("values {:?}",&normalized);
+                let mut normalized = vec![0.0; MAX_SYSCALLS as usize];
+                for i in 0..MAX_SYSCALLS as usize {
+                    let norm=match rates[i] {
+                        0.0 => 0.0,
+                        r => 1.0 - (r/max)
+                    };
+                    normalized[i]= norm;
+                }
 
                 tx.send(normalized).unwrap();
             }

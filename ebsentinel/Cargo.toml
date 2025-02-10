@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 ebsentinel-core = { path = "../ebsentinel-core" }
+autoencoder = { path = "../autoencoder" }
 
 anyhow = { workspace = true, default-features = true }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "net", "signal","time"] }

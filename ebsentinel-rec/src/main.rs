@@ -26,10 +26,11 @@ impl FromSql for Syscalls {
     }
 }
 
-
+//TODO add also metadata to db like mean / data usefull to normalization
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let conn = Connection::open("ebsentinel.db")?;
+    //TODO save also meta 
     conn.execute(
         "create table if not exists train (
              row_id integer primary key,
@@ -46,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     
-    let mut rx =run_ebsentinel_ebpf(57073)?;
+    let mut rx =run_ebsentinel_ebpf(46694)?;
 
     tokio::spawn(async move {
         let conn = Connection::open("ebsentinel.db").unwrap();
@@ -57,6 +58,7 @@ async fn main() -> anyhow::Result<()> {
              )",
             [],
         ).unwrap();
+
         conn.execute(
             "create table if not exists test (
                  row_id integer primary key,

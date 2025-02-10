@@ -21,7 +21,7 @@ pub fn ebsentinel(ctx: BtfTracePointContext) -> i32 {
 }
 
 fn try_sys_enter(ctx: BtfTracePointContext) -> Result<i32, i32> {    
-        let pid= ctx.pid();
+        let pid= ctx.tgid();
         let syscall_id: c_long = unsafe { ctx.arg(1) }; 
         if let Some(monitored_pid) = unsafe { MONITORED_PID.get(0) }{
             if pid == *monitored_pid {

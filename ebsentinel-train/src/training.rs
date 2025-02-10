@@ -26,9 +26,8 @@ pub struct Model<B: Backend>{
 impl<B: Backend> Model<B> {
     pub fn forward_reconstruction(&self, vecs: Tensor<B, 2>) -> RegressionOutput<B> {
         let output = self.inner.forward(vecs.clone());
-        
         let loss: Tensor<B, 1> =
-            MseLoss::new().forward(output.clone(), vecs.clone(), nn::loss::Reduction::Mean);
+            MseLoss::new().forward( output.clone(),vecs.clone(), nn::loss::Reduction::Mean);
         RegressionOutput::new(loss, output, vecs)
     }
 }
@@ -61,7 +60,7 @@ pub struct ModelConfig{
 
 impl ModelConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Model<B> {
-        let inner=AutoencoderConfig::new(self.input_size, self.latent_size).init(device);
+        let inner=AutoencoderConfig::new(self.input_size,self.latent_size).init(device);
         Model { inner }
     }
 }
@@ -69,7 +68,7 @@ impl ModelConfig {
 pub struct TrainingConfig {
     pub model: ModelConfig,
     pub optimizer: AdamConfig,
-    #[config(default = 500)]
+    #[config(default = 200)]
     pub num_epochs: usize,
     #[config(default = 8)]
     pub batch_size: usize,
