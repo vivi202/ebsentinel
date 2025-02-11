@@ -2,6 +2,22 @@
 This my playground project exploring the use of eBPF (Extended Berkeley Packet Filter) to monitor system calls of processes and detect anomalies using machine learning techniques.
 The project aims to combine eBPF's efficiency for tracing kernel events with the power of machine learning to identify abnormal behavior in real-time.
 
+
+# Overview
+The `ebsentinel` project has three main components.
+
+## `ebsentinel-rec` 
+  A CLI tool to monitor system calls of a specific process and save them into a SQLite database.
+  
+## `ebsentinel-train` 
+  A CLI tool for training the anomaly detection model based on the data collected by `ebsentinel-rec`.
+  
+## `ebsentinel`
+The main CLI tool that uses the trained model to perform real-time anomaly detection on a running process.
+
+
+
+
 ## Prerequisites
 
 1. stable rust toolchains: `rustup toolchain install stable`
