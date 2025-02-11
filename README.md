@@ -1,5 +1,5 @@
 # ebsentinel
-this my playground project exploring the use of eBPF (Extended Berkeley Packet Filter) to monitor system calls of processes and detect anomalies using machine learning techniques.
+This my playground project exploring the use of eBPF (Extended Berkeley Packet Filter) to monitor system calls of processes and detect anomalies using machine learning techniques.
 The project aims to combine eBPF's efficiency for tracing kernel events with the power of machine learning to identify abnormal behavior in real-time.
 
 ## Prerequisites
