@@ -1,74 +1,31 @@
+use clap::Parser;
+use cli::Cli;
 use ebsentinel_core::run_ebsentinel_ebpf;
-use rusqlite::{types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef}, Connection, ToSql};
+use ebsentinel_db::{EbsentinelDb, Syscalls};
 use tokio::signal;
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone,Serialize,Deserialize)]
-struct Syscalls{
-    syscalls: Vec<f32>
-}
+mod ebsentinel_db;
+mod cli;
 
-// Custom implementation for `Vec<f32>` serialization to SQLite BLOB
-impl ToSql for Syscalls {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
-        let serialized = bincode::serialize(self).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-        Ok(ToSqlOutput::from(serialized))
-    }
-}
 
-/// Custom implementation for `Vec<f32>` deserialization from SQLite BLOB
-impl FromSql for Syscalls {
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        match value.as_blob() {
-            Ok(blob) => bincode::deserialize(blob).map_err(|e| rusqlite::types::FromSqlError::Other(Box::new(e))),
-            Err(e) => Err(e),
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let conn = Connection::open("ebsentinel.db")?;
+    let cli = Cli::parse();
+    println!("{:?}",cli.db_file);
+    println!("{:?}",cli.test);
 
-    conn.execute(
-        "create table if not exists train (
-             row_id integer primary key,
-             syscalls blob not null 
-         )",
-        [],
-    )?;
-    conn.execute(
-        "create table if not exists test (
-             row_id integer primary key,
-             syscalls blob not null 
-         )",
-        [],
-    )?;
+    let db= EbsentinelDb::new(cli.db_file);
 
-    
-    let mut proc_mon =run_ebsentinel_ebpf(162959)?;
+    let mut proc_mon =run_ebsentinel_ebpf(cli.pid)?;
     let mut rx=proc_mon.run()?;
     tokio::spawn(async move {
-        let conn = Connection::open("ebsentinel.db").unwrap();
-        conn.execute(
-            "create table if not exists train (
-                 row_id integer primary key,
-                 syscalls blob not null 
-             )",
-            [],
-        ).unwrap();
-
-        conn.execute(
-            "create table if not exists test (
-                 row_id integer primary key,
-                 syscalls blob not null 
-             )",
-            [],
-        ).unwrap();
-        
         loop {
             let rates=rx.recv().await;
-            let data= Syscalls{syscalls: rates.unwrap()};
-            conn.execute("INSERT INTO test (syscalls) VALUES (?)", [&data]).unwrap();
+            let data= Syscalls::new(rates.unwrap());
+            match cli.test {
+                true => db.add_test_data(&data),
+                false => db.add_train_data(&data),
+            }
         }
     });
     

@@ -10,6 +10,7 @@ autoencoder = { path = "../autoencoder" }
 anyhow = { workspace = true, default-features = true }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "net", "signal","time"] }
 burn = { workspace = true, features = ["wgpu"] }
+clap = {workspace = true, features = ["derive"]}
 
 [build-dependencies]
 

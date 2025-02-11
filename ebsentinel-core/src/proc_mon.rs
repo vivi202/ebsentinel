@@ -75,6 +75,7 @@ impl ProcMon {
                 let rates=differentiator.process(&syscall_counts);
                 if let Ok(rates) = rates {
                     let norm=Normalizer.process(&rates).unwrap();
+                    println!("{:?}",norm);
                     tx.send(norm).unwrap();
                 }
                 prev= syscall_counts.clone();  

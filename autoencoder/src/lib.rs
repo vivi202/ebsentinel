@@ -1,10 +1,9 @@
-use burn::data::dataloader::batcher::Batcher;
 use burn::nn::loss::{self, MseLoss};
 use burn::nn::{LayerNorm, LayerNormConfig, Linear, LinearConfig, Relu};
 use burn::prelude::*;
 use burn::tensor::cast::ToElement;
+use burn::data::dataloader::batcher::Batcher;
 use data::{SyscallBatcher, Syscalls};
-
 pub mod data;
 
 #[derive(Module, Debug)]

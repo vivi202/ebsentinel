@@ -1,5 +1,5 @@
-use burn::{data::dataloader::batcher::Batcher, prelude::*};
 use serde::{Deserialize, Serialize};
+use burn::{data::dataloader::batcher::Batcher, prelude::*};
 #[derive(Clone)]
 pub struct SyscallBatcher<B: Backend> {
     device: B::Device,

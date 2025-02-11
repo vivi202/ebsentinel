@@ -1,8 +1,10 @@
 use autoencoder::{data::Syscalls, infer, AutoencoderConfig, Model};
 use burn::{backend::Wgpu, config::Config, module::Module, optim::AdamConfig, prelude::Backend, record::{CompactRecorder, Recorder}};
+use clap::Parser;
+use cli::Cli;
 use ebsentinel_core::{self, run_ebsentinel_ebpf};
 use tokio::signal;
-
+mod cli;
 #[derive(Config, Debug)]
 pub struct ModelConfig{
     input_size: usize, 
@@ -35,11 +37,13 @@ pub struct TrainingConfig {
 //Main program uses the previusly trained model to detect anomalies
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
     type MyBackend = Wgpu<f32, i32>;
     let device = burn::backend::wgpu::WgpuDevice::default();
-    let mut proc_mon=run_ebsentinel_ebpf(163389).unwrap();
+    let mut proc_mon=run_ebsentinel_ebpf(cli.pid).unwrap();
+
     let mut rx =proc_mon.run().unwrap();
-    
+
     let artifact_dir = "experiment";
     //TODO Load only model since TrainingConfig is useless
     let config = TrainingConfig::load(format!("{artifact_dir}/config.json"))
@@ -58,10 +62,10 @@ async fn main() -> anyhow::Result<()> {
             let rates=rx.recv().await.unwrap();
             let item= Syscalls { counts: rates };
             //Infer
-            let (out, loss) = infer(device.clone(), &model, item);
+            let (_, loss) = infer(device.clone(), &model, item);
             println!("{}",loss);
             
-            if loss > 0.000015 {
+            if loss > cli.threshold {
                 println!("anomaly detected")
             }
         }
