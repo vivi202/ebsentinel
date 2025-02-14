@@ -54,6 +54,6 @@ The main CLI tool that uses the trained model to perform real-time anomaly detec
 3. `ebsentinel-rec -t <PID>` to create the validation dataset.
 4. `ebsentinel-train` to train the model.
 5. `ebsentinel <PID> <THRESHOLD>` to detect anomalies in real-time.
-
-
-
+# TODOS
+- [ ] Create a proper dataset and testbench to validate the current model and set a baseline for future models.
+- [ ] Try out different models for example an lstm-autoencoder instead of vannilla autoencoder.
