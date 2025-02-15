@@ -47,6 +47,8 @@ The `ebsentinel` project has three main components.
 ## `ebsentinel`
 The main CLI tool that uses the trained model to perform real-time anomaly detection on a running process.
 
+# Ebsentinel block diagram
+![](docs/ebsentinelBlockDiagram.png)
 
 # How to use this?
 1. Create a directory to store the dataset and model configuration `mkdir test && cd test`
@@ -54,6 +56,9 @@ The main CLI tool that uses the trained model to perform real-time anomaly detec
 3. `ebsentinel-rec -t <PID>` to create the validation dataset.
 4. `ebsentinel-train` to train the model.
 5. `ebsentinel <PID> <THRESHOLD>` to detect anomalies in real-time.
+
+# Experiment results 
+
 # TODOS
 - [ ] Create a proper dataset and testbench to validate the current model and set a baseline for future models.
 - [ ] Try out different models for example an lstm-autoencoder instead of vannilla autoencoder.
