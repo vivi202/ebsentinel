@@ -1,6 +1,6 @@
 use std::vec;
 
-use autoencoder::{Autoencoder, AutoencoderConfig};
+use autoencoder::{data::{SyscallBatch, SyscallBatcher}, Autoencoder, AutoencoderConfig};
 use burn::{
     data::dataloader::DataLoaderBuilder,
     nn::loss::MseLoss,
@@ -14,13 +14,13 @@ use burn::{
     },
 };
 
-use crate::data::{SyscallBatch, SyscallBatcher, SyscallsDataset};
+use crate::data::SyscallsDataset;
 
 use burn::tensor::{backend::Backend, Tensor};
 
 #[derive(Module,Debug)]
 pub struct Model<B: Backend>{
-    inner: Autoencoder<B>
+    pub inner: Autoencoder<B>
 }
 
 impl<B: Backend> Model<B> {

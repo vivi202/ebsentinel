@@ -15,7 +15,6 @@ use tokio::{
 
 use crate::process_data::{DataProcessor, Differentiator, Normalizer};
 pub struct ProcMon {
-    //Monitored Pid
     monitored_pid: u32,
     polling_rate: Duration,
     ebpf: Ebpf,
@@ -24,12 +23,11 @@ pub struct ProcMon {
 impl ProcMon {
     pub fn new(monitored_pid: u32, polling_rate: Duration) -> Self {
         let ebpf = Self::load_epbf().unwrap();
-        let proc_mon = Self {
+        Self {
             monitored_pid,
             polling_rate,
             ebpf,
-        };
-        proc_mon
+        }
     }
 
     pub fn run(&mut self) -> anyhow::Result<UnboundedReceiver<Vec<f32>>> {
@@ -48,43 +46,40 @@ impl ProcMon {
             .unwrap();
 
         let map = self.ebpf.take_map("SYSCALLS_COUNTERS").unwrap();
-        let syscall_map: PerCpuArray<aya::maps::MapData, u64> =
-            PerCpuArray::try_from(map)?;
+        let syscall_map: PerCpuArray<aya::maps::MapData, u64> = PerCpuArray::try_from(map)?;
 
-        let polling_rate=self.polling_rate.clone();
-        
-        let mut differentiator= Differentiator::new(&self.polling_rate);
+        let polling_rate = self.polling_rate.clone();
+
+        let mut differentiator = Differentiator::new(&self.polling_rate);
 
         tokio::spawn(async move {
             let mut prev = Vec::new();
             let mut syscall_counts = vec![0; MAX_SYSCALLS as usize];
             loop {
-
-                for i in 0..MAX_SYSCALLS as usize{
+                for i in 0..MAX_SYSCALLS as usize {
                     //Aggregate Syscalls counts from all cpus
-                    syscall_counts[i]=0;
+                    syscall_counts[i] = 0;
                     if let Ok(counts) = syscall_map.get(&(i as u32), 0) {
                         for cpu_val in counts.iter() {
                             syscall_counts[i] += cpu_val;
                         }
                     }
                 }
-                
-                if syscall_counts != prev{
-                                  //Compute derivative
-                let rates=differentiator.process(&syscall_counts);
-                if let Ok(rates) = rates {
-                    let norm=Normalizer.process(&rates).unwrap();
-                    println!("{:?}",norm);
-                    tx.send(norm).unwrap();
-                }
-                prev= syscall_counts.clone();  
+
+                if syscall_counts != prev {
+                    //Compute derivative
+                    let rates = differentiator.process(&syscall_counts);
+                    if let Ok(rates) = rates {
+                        let norm = Normalizer.process(&rates).unwrap();
+                        tx.send(norm).unwrap();
+                    }
+                    prev = syscall_counts.clone();
                 }
 
                 sleep(polling_rate).await
             }
         });
-        
+
         Ok(rx)
     }
 

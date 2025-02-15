@@ -69,7 +69,21 @@ impl<B: Backend> Autoencoder<B> {
         let transformed = self.middle.forward(encoded);
         self.decoder.forward(transformed)
     }
+
+    pub fn infer(device: B::Device, model: &Autoencoder<B>, item: Syscalls) -> (Vec<f32>, f32) {
+        let batcher = SyscallBatcher::new(device);
+        let batch = batcher.batch(vec![item]);
+        let output = model.forward(batch.syscalls.clone());
+        let loss = MseLoss::new()
+            .forward(batch.syscalls, output.clone(), loss::Reduction::Mean)
+            .detach()  
+            .into_scalar();
+    
+        (output.into_data().to_vec().unwrap(), loss.to_f32())
+    }
+    
 }
+
 
 #[derive(Config, Debug)]
 pub struct AutoencoderConfig {
@@ -121,14 +135,3 @@ impl ModelConfig {
     }
 }
 
-pub fn infer<B: Backend>(device: B::Device, model: &Model<B>, item: Syscalls) -> (Vec<f32>, f32) {
-    let batcher = SyscallBatcher::new(device);
-    let batch = batcher.batch(vec![item]);
-    let output = model.inner.forward(batch.syscalls.clone());
-    let loss = MseLoss::new()
-        .forward(batch.syscalls, output.clone(), loss::Reduction::Mean)
-        .detach()  
-        .into_scalar();
-
-    (output.into_data().to_vec().unwrap(), loss.to_f32())
-}

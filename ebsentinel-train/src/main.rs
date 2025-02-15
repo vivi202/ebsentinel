@@ -1,7 +1,8 @@
 mod data;
 mod training;
-use burn::{backend::{Autodiff, Wgpu}, config::Config, data::{dataloader::{batcher::{self, Batcher}, Dataset}, dataset::{self, transform::Window}}, module::Module, nn::loss::{self, MseLoss}, optim::AdamConfig, prelude::Backend, record::{CompactRecorder, Recorder}, tensor::{cast::ToElement, Tensor}};
-use data::{SyscallBatcher, Syscalls, SyscallsDataset};
+use autoencoder::{data::{SyscallBatcher, Syscalls}, Autoencoder};
+use burn::{backend::{Autodiff, Wgpu}, config::Config, data::dataloader::{batcher::Batcher, Dataset}, module::Module, nn::loss::{self, MseLoss}, optim::AdamConfig, prelude::Backend, record::{CompactRecorder, Recorder}, tensor::cast::ToElement};
+use data::SyscallsDataset;
 use training::{train, Model, ModelConfig, TrainingConfig};
 
 
@@ -15,7 +16,7 @@ fn main() {
 
     train::<MyAutodiffBackend>(
         "ebsentinel.db",
-        &artifact_dir,
+        artifact_dir,
         TrainingConfig::new(ModelConfig::new(512, 64), AdamConfig::new()),
         device.clone(),
     );
@@ -31,35 +32,21 @@ fn main() {
     let model = config.model.init::<MyBackend>(&device).load_record(record);
 
     let dataset=SyscallsDataset::train("ebsentinel.db");
+
     let mut thres: f32=0.0;
+
     for i in 0..dataset.len(){
         let item=dataset.get(i).unwrap();
-        let (out,loss)=infer::<MyBackend>(device.clone(),&model,item.clone() );
-        println!("loss: {loss}");
-        println!("Predicted: {:?}",out);
-        println!("Expected: {:?}",item.counts);
-        println!("");
+        let (_,loss)=infer::<MyBackend>(device.clone(),&model,item.clone() );
         thres= thres.max(loss);
     }
     
-    let test_item=Syscalls { counts: vec![1.0;512] };
-    let (out,loss) =infer(device.clone(), &model, test_item.clone());
     println!("threshold: {}",thres);
-    println!("Test");
-    println!("loss: {loss}");
-    println!("Predicted: {:?}",out);
-    println!("Expected: {:?}",test_item);
-    println!("");
+
+    println!();
 
 }
 
 pub fn infer<B: Backend>(device: B::Device, model: &Model<B>, item: Syscalls) -> (Vec<f32>,f32) {
-    let batcher = SyscallBatcher::new(device);
-    let batch = batcher.batch(vec![item]);
-    let output = model.forward(batch.syscalls.clone());
-    let loss =
-        MseLoss::new().forward( output.clone(),batch.syscalls, loss::Reduction::Mean).into_scalar();
-
-        
-    (output.into_data().to_vec().unwrap(),loss.to_f32())
+    Autoencoder::infer(device,&model.inner,item)
 }

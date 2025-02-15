@@ -1,4 +1,4 @@
-use autoencoder::{data::Syscalls, infer, AutoencoderConfig, Model};
+use autoencoder::{data::Syscalls, Autoencoder, AutoencoderConfig, Model};
 use burn::{backend::Wgpu, config::Config, module::Module, optim::AdamConfig, prelude::Backend, record::{CompactRecorder, Recorder}};
 use clap::Parser;
 use cli::Cli;
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
             let rates=rx.recv().await.unwrap();
             let item= Syscalls { counts: rates };
             //Infer
-            let (_, loss) = infer(device.clone(), &model, item);
+            let (_, loss) = Autoencoder::infer(device.clone(), &model.inner, item);
             println!("{}",loss);
             
             if loss > cli.threshold {
